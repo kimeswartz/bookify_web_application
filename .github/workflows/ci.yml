@@ -10,9 +10,6 @@ jobs:
   backend:
     name: Backend (Maven)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./bookify_app
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,14 +22,12 @@ jobs:
           cache: maven
 
       - name: Build & Test backend
+        working-directory: ./bookify_app
         run: mvn -Ptest verify
 
   frontend:
     name: Frontend (Vite + Vitest)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./bookify_app/frontend
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -44,10 +39,13 @@ jobs:
           cache: npm
 
       - name: Install dependencies
+        working-directory: ./bookify_app/frontend
         run: npm ci
 
       - name: Run lint
+        working-directory: ./bookify_app/frontend
         run: npm run lint
 
       - name: Run tests
+        working-directory: ./bookify_app/frontend
         run: npm run test -- --run
