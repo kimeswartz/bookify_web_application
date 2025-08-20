@@ -22,7 +22,6 @@ jobs:
           cache: maven
 
       - name: Build & Test backend
-        working-directory: ./bookify_app
         run: mvn -Ptest verify
 
   frontend:
@@ -39,13 +38,14 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        working-directory: ./bookify_app/frontend
+        working-directory: ./frontend
         run: npm ci
 
       - name: Run lint
-        working-directory: ./bookify_app/frontend
+        working-directory: ./frontend
         run: npm run lint
 
       - name: Run tests
-        working-directory: ./bookify_app/frontend
+        working-directory: ./frontend
         run: npm run test -- --run
+
