@@ -6,8 +6,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class BookifyAppApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(BookifyAppApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(BookifyAppApplication.class, args);
+    }
 
 }
