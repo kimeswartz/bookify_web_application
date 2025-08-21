@@ -1,0 +1,27 @@
+<!-- ******************************************************************************************
+     * Logback configuration for application logging.                                         *
+     * Logs are sent to the console in JSON format using logstash encoder,                    *
+     * including timestamp, logger name, thread, log level, message, MDC, context,            *
+     * and arguments. Root logger is set to INFO level.                                       *
+     ****************************************************************************************** -->
+
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp />
+                <loggerName />
+                <threadName />
+                <logLevel />
+                <message />
+                <mdc />
+                <context />
+                <arguments />
+            </providers>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+    </root>
+</configuration>
