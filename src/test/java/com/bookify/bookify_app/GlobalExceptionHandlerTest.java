@@ -33,7 +33,8 @@ class GlobalExceptionHandlerTest {
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().contentType("application/problem+json"))
                 .andExpect(jsonPath("$.title").value("Internal Server Error"))
-                .andExpect(jsonPath("$.correlationId").exists());
+                .andExpect(jsonPath("$.correlationID").exists());
     }
 }
+
 
