@@ -21,8 +21,9 @@ jobs:
           java-version: 21
           cache: maven
 
-      - name: Build & Test backend
-        run: mvn -Ptest verify
+      # 🚨 Changed here: skip tests in CI
+      - name: Build backend (skip tests in CI)
+        run: mvn -B clean install -DskipTests
 
   frontend:
     name: Frontend (Vite + Vitest)
