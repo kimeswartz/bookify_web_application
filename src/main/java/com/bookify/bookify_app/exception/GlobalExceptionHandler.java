@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
      *     "status": 404,
      *     "detail": "Clinic with domain okand not found",
      *     "instance": "/api/v1/admin/clinic",
-     *     "correlationID": "abc123..."
+     *     "correlationID": "abc1234..."
      *   }
      *
      * WHY:
