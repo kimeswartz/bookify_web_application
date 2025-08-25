@@ -1,16 +1,21 @@
 package com.bookify.bookify_app.service;
 
 // ********************************************************************************************
-// * ClinicService provides business logic for resolving clinics by their subdomain.          *
-// * It queries the ClinicRepository for a match and returns the clinic ID if found.          *
-// * If no clinic exists for the given subdomain, a custom ClinicNotFoundException is thrown. *
-// * WHY: Centralizes clinic lookup logic, ensures consistent error handling, and separates   *
-// * persistence from application logic.                                                      *
+// * ClinicService contains business logic for resolving clinics by their subdomain.          *
+// *                                                                                          *
+// * It exposes two variants for lookup:                                                      *
+// *   - Optional variant: returns Optional<String>, avoids exceptions, useful in filters.    *
+// *   - Throwing variant: fails fast with ClinicNotFoundException, for stricter contexts.    *
+// *                                                                                          *
+// * WHY: Makes the API explicit and safe for both filters and controllers depending on use   *
+// * case (graceful handling vs. strict validation).                                          *
 // ********************************************************************************************
 
 import com.bookify.bookify_app.model.Clinic;
 import com.bookify.bookify_app.repository.ClinicRepository;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 public class ClinicService {
@@ -21,43 +26,41 @@ public class ClinicService {
         this.repo = repo;
     }
 
+
     /**
-     * Not Active ATM
-     * Resolve a clinic by subdomain.
-     * - Returns clinicId if found.
-     * - Throws ClinicNotFoundException if no clinic matches.
+     * Attempt to resolve a clinicId from a given subdomain.
+     * Returns an Optional, which will be empty if no clinic is found.
+     * Useful in filters where absence of a clinic should not immediately fail.
      *
-     * Use this version if you want a "fail-fast" approach.
-     * Example: direct lookups where missing clinic = real error.
+     * @param subdomain the subdomain that identifies the clinic
+     * @return Optional containing clinicId if found, otherwise Optional.empty()
      */
-    public String resolveClinicBySubDomain(String subDomain) {
-        return repo.findBySubdomain(subDomain)
-                .map(Clinic::getId)
-                .orElseThrow(() -> new ClinicNotFoundException(subDomain));
+
+    public Optional<String> resolveClinicIdBySubdomainOptional(String subdomain) {
+        return repo.findBySubdomain(subdomain).map(Clinic::getId);
     }
 
     /**
-     * Safe version of resolveClinicBySubDomain.
-     * - Returns clinicId if found.
-     * - Returns null if no clinic matches (no exception).
+     * Resolve a clinicId from a given subdomain, or throw an exception if none is found.
+     * Use this in controllers or business logic where missing clinics should be treated as errors.
      *
-     * Use this in the filter so the filter itself does not
-     * break the request lifecycle with exceptions.
+     * @param subdomain the subdomain that identifies the clinic
+     * @return the resolved clinicId
+     * @throws ClinicNotFoundException if no clinic matches the given subdomain
      */
-    public String resolveClinicBySubDomainOrNull(String subdomain) {
-        return repo.findBySubdomain(subdomain)
-                .map(Clinic::getId)
-                .orElse(null);
+
+    public String resolveClinicIdBySubdomain(String subdomain) {
+        return resolveClinicIdBySubdomainOptional(subdomain)
+                .orElseThrow(() -> new ClinicNotFoundException(subdomain));
     }
 
     /**
-     * Custom exception for missing clinics.
-     * It carries the failing subdomain for clearer error messages.
+     * Custom runtime exception thrown when no clinic is found for a given subdomain.
      */
+
     public static class ClinicNotFoundException extends RuntimeException {
-        public ClinicNotFoundException(String subDomain) {
-            super("Clinic with domain " + subDomain + " not found");
+        public ClinicNotFoundException(String subdomain) {
+            super("Clinic with domain " + subdomain + " not found");
         }
     }
-
 }

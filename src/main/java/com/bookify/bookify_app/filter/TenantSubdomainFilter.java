@@ -1,12 +1,18 @@
 package com.bookify.bookify_app.filter;
 
 // ********************************************************************************************
-// * TenantSubdomainFilter extracts the subdomain from the Host header of incoming requests.  *
-// * If a subdomain matches, it resolves the clinic ID via ClinicService and stores it in     *
-// * TenantContext for the current request thread.                                            *
-// * After the request is processed, the clinic context is cleared to avoid leakage.          *
-// * WHY: Enables multi-tenant routing by mapping requests to the correct clinic based on     *
-// * their subdomain (e.g., clinic1.bookApp.com -> clinic1’s ID).                             *
+// * TenantSubdomainFilter is responsible for resolving the tenant (clinic) context based on  *
+// * the subdomain of incoming requests.                                                      *
+// *                                                                                          *
+// * HOW IT WORKS:                                                                            *
+// * - Extracts the Host header (or X-Forwarded-Host when behind proxies).                    *
+// * - Matches subdomains using the regex: "<sub>.minapp.se[:port]"                           *
+// * - If a valid subdomain is found, it attempts to resolve a clinicId via ClinicService.    *
+// * - If a match is found, the clinicId is stored in TenantContext for the current request.  *
+// * - After the request finishes, TenantContext is cleared to prevent cross-request leaks.   *
+// *                                                                                          *
+// * WHY: This enables multi-tenancy by routing requests to the correct clinic based on       *
+// * their subdomain (e.g., clinic1.minapp.se -> clinic1’s ID).                               *
 // ********************************************************************************************
 
 import com.bookify.bookify_app.service.ClinicService;
@@ -25,10 +31,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Component
-@Order(2) // Runs after CorrelationIdFilter (order = 1) but before controller logic
+@Order(2) // Runs after CorrelationIdFilter (1), before controller logic
 public class TenantSubdomainFilter extends OncePerRequestFilter {
 
-    // Regex to capture the subdomain part of "something.minapp.se"
+    // Regex pattern that extracts the subdomain from "<sub>.minapp.se" (optionally with a port, e.g., ":443")
     private static final Pattern SUB = Pattern.compile("^(?<sub>[^.]+)\\.minapp\\.se(:\\d+)?$");
 
     private final ClinicService clinicService;
@@ -38,36 +44,37 @@ public class TenantSubdomainFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest req,
-                                    HttpServletResponse res,
-                                    FilterChain chain) throws ServletException, IOException {
-        // Get the full "Host" header (example: hudvardskliniken.minapp.se)
-        String host = Optional.ofNullable(req.getHeader("Host")).orElse("");
-        Matcher m = SUB.matcher(host);
+    protected void doFilterInternal(
+            @NonNull HttpServletRequest req,
+            @NonNull HttpServletResponse res,
+            @NonNull FilterChain chain
+    ) throws ServletException, IOException {
+
+        // Use forwarded host if available (proxy/load balancer), otherwise fall back to Host header
+        String hostHeader = Optional.ofNullable(req.getHeader("X-Forwarded-Host"))
+                .orElseGet(() -> Optional.ofNullable(req.getHeader("Host")).orElse(""))
+                .toLowerCase();
+
+        Matcher m = SUB.matcher(hostHeader);
 
         if (m.find()) {
-            // Extract only the subdomain part
             String sub = m.group("sub");
 
-            // Use the safe lookup (returns null if not found, no exception here)
-            // Important: We want the *controller* to decide what happens if a clinic is missing,
-            // not the filter. That way we can return a clean 404 JSON error.
-            String clinicId = clinicService.resolveClinicBySubDomainOrNull(sub);
-            if (clinicId != null) {
-                // Store the clinicId for this request thread
-                TenantContext.setClinicId(clinicId);
-            }
+            // Resolve clinicId based on subdomain (non-throwing; only set if found)
+            clinicService.resolveClinicIdBySubdomainOptional(sub)
+                    .ifPresent(TenantContext::setClinicId);
+        } else {
+            // Optional extension point: support localhost or other dev/test domains
+            // Example: if (hostHeader.startsWith("localhost")) { ... }}
         }
 
         try {
-            // Pass the request down the filter chain
             chain.doFilter(req, res);
         } finally {
-            // Always clear the context to prevent "leaking" clinicId across requests
+            // Always clear tenant context to avoid leaking state across requests
             TenantContext.clear();
         }
     }
-
 }
 
 

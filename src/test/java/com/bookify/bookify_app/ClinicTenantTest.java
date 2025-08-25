@@ -1,5 +1,20 @@
 package com.bookify.bookify_app;
 
+// ********************************************************************************************
+// * ClinicTenantTest verifies multi-tenant resolution based on request subdomain.            *
+// *                                                                                          *
+// * Test wiring:                                                                             *
+// *  - @SpringBootTest + @AutoConfigureMockMvc spins up the full Spring context and MVC.     *
+// *  - A Clinic entity is inserted before each test to simulate a tenant in the database.    *
+// *                                                                                          *
+// * Covered flows:                                                                           *
+// *  - Requests with a known subdomain resolve the correct clinic and return clinicId.       *
+// *  - Requests with an unknown subdomain return 404 Not Found.                              *
+// *                                                                                          *
+// * WHY: Ensures that TenantSubdomainFilter + ClinicService correctly enforce per-tenant     *
+// * resolution logic based on subdomains.                                                    *
+// ********************************************************************************************
+
 import com.bookify.bookify_app.model.Clinic;
 import com.bookify.bookify_app.repository.ClinicRepository;
 import org.junit.jupiter.api.BeforeEach;
