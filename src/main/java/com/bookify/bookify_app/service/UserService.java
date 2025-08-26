@@ -21,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.security.core.userdetails.*;
 
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -55,6 +56,17 @@ public class UserService implements UserDetailsService {
         return userRepository.save(newUser);
     }
 
+    /**
+     * Activate a user account (set active=true) after successful email verification.
+     *
+     * @param userId ID of the user to activate
+     */
+    public void activateUser(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        user.setActive(true);
+        userRepository.save(user);
+    }
 
     /**
      * Load a user by email and convert it into a Spring Security UserDetails instance.
@@ -77,4 +89,20 @@ public class UserService implements UserDetailsService {
                 .roles(user.getRoles().stream().map(Enum::name).toArray(String[]::new))
                 .build();
     }
+
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
+    /**
+     * Update the user's password securely.
+     */
+
+    public void updatePassword(String userId, String rawPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        user.setPasswordHash(passwordEncoder.encode(rawPassword));
+        userRepository.save(user);
+    }
+
 }
