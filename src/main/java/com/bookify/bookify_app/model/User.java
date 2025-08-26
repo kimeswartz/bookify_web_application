@@ -22,10 +22,20 @@ public class User {
 
     @Indexed(unique = true)
     private String email;
+
     private String passwordHash;
+
     private Set<UserRole> roles;
 
     @Indexed
-    private String clinicId; //From TenantContext
+    private String clinicId; // From TenantContext
 
+    /**
+     * Indicates whether the user account has been activated
+     * via email verification. Defaults to false registration.
+     */
+
+    @Builder.Default
+    private boolean active = false;
 }
+
