@@ -30,10 +30,15 @@ export default function LoginPage() {
                 body: JSON.stringify({ email, password }),
             })
             navigate("/admin/profile")
-        } catch (err: any) {
-            setError(err.message)
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setError(err.message)
+            } else {
+                setError("Unexpected error")
+            }
         }
     }
+
 
     return (
         <div className="max-w-md mx-auto mt-10 bg-white p-6 rounded-2xl shadow">

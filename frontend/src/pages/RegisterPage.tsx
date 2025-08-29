@@ -37,10 +37,14 @@ export default function RegisterPage() {
                 }
             )
 
-            // 👇 redirect direkt med token
+            // 👇 redirect direct with token - Must be updated for production
             navigate(`/verify-email?token=${res.verificationToken}`)
-        } catch (err: any) {
-            setError(err.message)
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setError(err.message)
+            } else {
+                setError("Unexpected error")
+            }
         }
     }
 
