@@ -46,10 +46,14 @@ public class AuthController {
                 new UsernamePasswordAuthenticationToken(req.email(), req.password())
         );
 
-        // Store authentication in SecurityContext and regenerate session ID
-        // (protection against session fixation attacks)
+        // ensure a session exists
+        request.getSession(true);
+
+        // store authentication in SecurityContext
         SecurityContextHolder.getContext().setAuthentication(auth);
-        request.changeSessionId();
+
+        // bind SecurityContext to session manually
+        request.getSession().setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
 
         // Extract roles from authenticated user
         List<String> roles = auth.getAuthorities().stream()
@@ -157,7 +161,6 @@ public class AuthController {
     // DTOs
     public record ForgotPasswordRequest(String email) {}
     public record ResetPasswordRequest(String token, String newPassword) {}
-
 
     // Request/response DTOs as Java records
     public record LoginRequest(String email, String password) {}

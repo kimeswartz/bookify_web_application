@@ -11,17 +11,16 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.time.Duration;
 import java.util.List;
 
 @Configuration
@@ -30,13 +29,28 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)
-                .cors(c -> {})
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .csrf(csrf -> csrf
+                        // Aktivera CSRF med cookie, HttpOnly=false så frontend kan läsa token
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                )
+                .cors(cors -> {})
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/api/v1/auth/csrf",
+                                "/api/v1/auth/register",
+                                "/api/v1/auth/login",
+                                "/api/v1/auth/verify-email",
+                                "/api/v1/auth/forgot-password",
+                                "/api/v1/auth/reset-password",
+                                "/api/v1/public/**",
+                                "/actuator/health"
+                        ).permitAll()
+                        .anyRequest().authenticated()
+                )
                 .headers(headers -> headers
                         .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).preload(true))
                         .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'"))
-                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
+                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
                         .referrerPolicy(ref -> ref.policy(ReferrerPolicy.NO_REFERRER))
                         .contentTypeOptions(withDefaults -> {})
                 );
@@ -47,18 +61,15 @@ public class SecurityConfig {
     /**
      * Exposes AuthenticationManager as a bean so it can be injected
      * (e.g., in authentication controllers or services).
-     * Uses the providers automatically configured by Spring.
      */
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        // Bygger på de provider(s) som Spring konfigurerar automatiskt
         return config.getAuthenticationManager();
     }
 
     /**
      * PasswordEncoder bean used for authentication and user registration.
-     * BCrypt is a strong, salted hashing algorithm recommended for storing passwords.
      */
 
     @Bean
@@ -68,27 +79,20 @@ public class SecurityConfig {
 
     /**
      * Configures Cross-Origin Resource Sharing (CORS) for the application.
-     * Two strategies are possible:
-     * 1) Open: allows all origins without credentials (default below).
-     * 2) Strict: only specific origins allowed, with credentials (commented out).
+     * In dev: only allow frontend at localhost:5173 and enable credentials (cookies).
      */
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
 
-        // 1) (Open, best during development)
-        cfg.setAllowedOriginPatterns(List.of("*"));
-        cfg.setAllowCredentials(false);
-
-        // 2) Strict (Will be turned on when app is live)
-        // cfg.setAllowedOrigins(List.of("https://din-front.com", "http://localhost:5173"));
-        // cfg.setAllowCredentials(true);
+        // Dev: only allow frontend origin
+        cfg.setAllowedOrigins(List.of("http://localhost:5173", "http://127.0.0.1:5173"));
+        cfg.setAllowCredentials(true); // cookies allowed!
 
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        cfg.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "X-CSRF-TOKEN"));
+        cfg.setAllowedHeaders(List.of("*"));
         cfg.setExposedHeaders(List.of("Location"));
-        cfg.setMaxAge(Duration.ofHours(1));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", cfg);
