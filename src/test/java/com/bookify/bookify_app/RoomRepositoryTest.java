@@ -1,5 +1,20 @@
 package com.bookify.bookify_app;
 
+// ********************************************************************************************
+// * RoomRepositoryTest: verifies MongoDB unique index on room names per clinic               *
+// *                                                                                          *
+// * WHAT                                                                                     *
+// * - Sets up MongoDB indexes for Room entity before each test.                              *
+// * - Saves one room with (clinicId, name).                                                  *
+// * - Attempts to save another room with the same (clinicId, name).                          *
+// * - Expects DuplicateKeyException from MongoDB unique index.                               *
+// *                                                                                          *
+// * WHY                                                                                      *
+// * - Prevents duplicate room names inside the same clinic.                                  *
+// * - Protects data integrity at the database level (not just via service validation).       *
+// * - Ensures that index annotations/config on Room entity are effective.                    *
+// ********************************************************************************************
+
 import com.bookify.bookify_app.model.Room;
 import com.bookify.bookify_app.repository.RoomRepository;
 import org.junit.jupiter.api.BeforeEach;

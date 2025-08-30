@@ -1,5 +1,20 @@
 package com.bookify.bookify_app;
 
+// ********************************************************************************************
+// * StaffMemberRepositoryTest: verifies MongoDB unique index constraints                     *
+// *                                                                                          *
+// * WHAT                                                                                     *
+// * - Runs with @DataMongoTest: in-memory MongoDB test slice (repo + template).              *
+// * - BeforeEach: resolves and ensures MongoDB indexes for StaffMember entity.               *
+// * - Test: saving two StaffMembers with the same clinicId + email should fail.              *
+// *                                                                                          *
+// * WHY                                                                                      *
+// * - Ensures database-level uniqueness is actually enforced (not just assumed in code).     *
+// * - Protects against data corruption (duplicate staff emails within the same clinic).      *
+// * - Catches misconfigurations where indexes aren't created at runtime.                     *
+// * - Repository tests validate persistence rules, not only service logic.                   *
+// ********************************************************************************************
+
 import com.bookify.bookify_app.model.StaffMember;
 import com.bookify.bookify_app.repository.StaffMemberRepository;
 import org.junit.jupiter.api.BeforeEach;
