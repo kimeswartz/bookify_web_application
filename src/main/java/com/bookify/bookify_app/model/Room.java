@@ -1,26 +1,24 @@
+// Room.java
 package com.bookify.bookify_app.model;
 
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
-import jakarta.validation.constraints.NotBlank;
 
 @Setter
 @Getter
-@Document(collection = "clinics")
-public class Clinic {
-
+@Document("rooms")
+public class Room {
     @Id
     private String id;
 
-    @NotBlank
+    private String clinicId;
+
+    @Indexed(unique = true)
     private String name;
 
-    @NotBlank
-    private String subdomain;
-
-    private String phone;
-    private String email;
+    private int capacity = 1;
 
 }
