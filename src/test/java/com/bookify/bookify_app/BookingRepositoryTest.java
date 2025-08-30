@@ -1,5 +1,19 @@
 package com.bookify.bookify_app;
 
+// ********************************************************************************************
+// * BookingRepositoryTest: verifies unique booking rules + ZonedDateTime converters          *
+// *                                                                                          *
+// * WHAT                                                                                     *
+// * - Loads Mongo custom converters (ZonedDateTime <-> Date) via @Import(MongoConverters).   *
+// * - Ensures compound unique index on bookings prevents double-booking same slot.           *
+// * - Verifies ZonedDateTime fields are stored/retrieved correctly in MongoDB.               *
+// *                                                                                          *
+// * WHY                                                                                      *
+// * - Prevents business rule violations (no overlapping booking for the same staff/room/slot)*
+// * - Protects against silent data corruption if converters misbehave.                       *
+// * - Database-level tests confirm persistence behavior, not just in-memory logic.           *
+// ********************************************************************************************
+
 import com.bookify.bookify_app.config.MongoConvertersConfig;
 import com.bookify.bookify_app.model.Booking;
 import com.bookify.bookify_app.repository.BookingRepository;
@@ -90,7 +104,7 @@ class BookingRepositoryTest {
 
         Booking found = repo.findById(booking.getId()).orElseThrow();
 
-        // ✅ Truncate both sides to millis before assert
+        // Truncate both sides to millis before assert
         assertEquals(start.toInstant().toEpochMilli(), found.getStartTime().toInstant().toEpochMilli());
         assertEquals(end.toInstant().toEpochMilli(), found.getEndTime().toInstant().toEpochMilli());
     }
